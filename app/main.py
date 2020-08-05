@@ -16,13 +16,13 @@ def home_view():
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():
     number = request.form['From']
-    message_body = str(request.form['Body'])
+    message_body = str(request.form['Body']).strip()
     logging.info("Received the following message: {} - {}".format(number, message_body))
 
     resp = MessagingResponse()
     
     if message_body.lower() == "next":
-        msg = "Skipping to next song on Spotify."
+        msg = "Skipping to next song on Spotify!!!!"
     elif message_body.lower() == "pause":
         msg = "Pausing Spotify"
     elif message_body.lower() == "previous":

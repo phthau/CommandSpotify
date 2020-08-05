@@ -3,7 +3,7 @@ import logging
 import sys
 from twilio import twiml
 from twilio.twiml.messaging_response import MessagingResponse
-
+from .spotify import SpotifyWrapper
 
 logging.basicConfig(level=logging.INFO)
 
@@ -20,20 +20,22 @@ def sms_reply():
     logging.info("Received the following message: {} - {}".format(number, message_body))
 
     resp = MessagingResponse()
-    
-    if message_body.lower() == "next":
-        msg = "Skipping to next song on Spotify!!!!"
-    elif message_body.lower() == "pause":
-        msg = "Pausing Spotify"
-    elif message_body.lower() == "previous":
-        msg = "Previous song on Spotify"
-    elif message_body.lower() == "play":
-        msg = "Resuming Spotify"
-    else:
-        msg = "Invalid request. Please try next/pause/previous/play."
+    sp = SpotifyWrapper()
 
-    logging.info(msg)
-
+    try:
+        if message_body.lower() == "next":
+            msg = sp.nextSong()
+        elif message_body.lower() == "pause":
+            msg = sp.pauseSong()
+        elif message_body.lower() == "previous":
+            msg = sp.previousSong()
+        elif message_body.lower() == "play":
+            msg = sp.resumeSong()
+        else:
+            msg = "Invalid request. Please try next/pause/previous/play."
+            logging.info(msg)
+    except Exception:
+        msg = "An error occurred. Unable to process request."
 
     resp = MessagingResponse()
     resp.message(msg)

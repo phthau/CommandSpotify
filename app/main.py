@@ -1,6 +1,8 @@
 from flask import Flask, request
 import logging
 import sys
+from twilio.twiml.messaging_response import MessagingResponse
+
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
@@ -19,3 +21,18 @@ def callback():
         return "Unable to process the request."
 
     return request.get_json()
+
+
+@app.route("/sms", methods=['GET', 'POST'])
+def sms_reply():
+    """Respond to incoming calls with a MMS message."""
+    # Start our TwiML response
+    resp = MessagingResponse()
+
+    # Add a text message
+    msg = resp.message("The Robots are coming! Head for the hills!")
+
+    # Add a picture message
+    msg.media("https://farm8.staticflickr.com/7090/6941316406_80b4d6d50e_z_d.jpg")
+
+    return str(resp)

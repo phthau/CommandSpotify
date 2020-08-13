@@ -4,6 +4,10 @@ import sys
 from twilio import twiml
 from twilio.twiml.messaging_response import MessagingResponse
 from .spotify import SpotifyWrapper
+import os
+import requests
+import base64
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,7 +15,38 @@ app = Flask(__name__)
 
 @app.route("/")
 def home_view(): 
-    return "<h1>Hello World</h1>"
+    spotify_code = request.args.get('code')
+    CLIENT_ID = '<Client>'
+    CLIENT_SECRET = '<Secret>'
+    CALLBACK_URL = 'http://localhost:5000'
+    REDIRECT_URL = 'http://localhost:5000'
+
+    SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
+
+    auth_token = spotify_code
+
+    code_payload = {
+        "grant_type": "authorization_code",
+        "code": str(auth_token),
+        "redirect_uri": CALLBACK_URL
+    }
+
+    auth = "{}:{}".format(CLIENT_ID, CLIENT_SECRET)
+    base64encoded = base64.urlsafe_b64encode(auth.encode('UTF-8')).decode('ascii')
+    headers = {"Authorization": "Basic {}".format(base64encoded)}
+    post_request = requests.post(SPOTIFY_TOKEN_URL, data=code_payload, headers=headers)
+    
+    
+    if post_request.status_code != 200:
+        return 'Error'
+
+    access_token = post_request.json()['access_token']
+    
+    return access_token
+
+@app.route("/<access>")
+def spotify_redirect(access):
+    return "The access key I got back is: {}".format(access)
 
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():

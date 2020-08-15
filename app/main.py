@@ -8,17 +8,26 @@ import sys
 from twilio import twiml
 from twilio.twiml.messaging_response import MessagingResponse
 from .spotify import SpotifyWrapper
+import pyrebase
+
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-    
-CLIENT_ID = "<CLIENT_ID>"
-CLIENT_SECRET = "<CLIENT_SECRET"
-CALLBACK_URL = "<CALLBACK_URL"
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+CALLBACK_URL = os.environ.get("CALLBACK_URL")
 SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
 SPOTIFY_AUTH_URL = "https://accounts.spotify.com/authorize"
-    
+config = {
+  "apiKey": os.environ.get("apiKey"),
+  "authDomain": os.environ.get("authDomain"),
+  "databaseURL": os.environ.get("databaseURL"),
+  "storageBucket": os.environ.get("storageBucket")
+}
+
+firebase = pyrebase.initialize_app(config)
+
 ##TODO: refreshtoken
 @app.route("/")
 def home():
@@ -34,15 +43,21 @@ def home():
     post_request = requests.post(url = SPOTIFY_TOKEN_URL, data = data, headers = headers)
     
     re = json.loads(post_request.content)
-    return re
+    db = firebase.database()
+    results = db.child("auth").update(re)
+    api_token = db.child("auth").child('access_token').get()
 
-@app.route("/sms/", methods=['GET', 'POST'])
+    return api_token.val()
+
+@app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():
     message_body = str(request.form['Body']).strip()
     number = request.form['From']
     logging.info("Received the following message: {} - {}".format(number, message_body))
 
-    sp = SpotifyWrapper()
+    db = firebase.database()
+    api_token = db.child("auth").child('access_token').get()
+    sp = SpotifyWrapper(api_token.val())
     try:
         if message_body.lower() == "next":
             msg = sp.nextSong()

@@ -45,9 +45,8 @@ def home():
     re = json.loads(post_request.content)
     db = firebase.database()
     results = db.child("auth").update(re)
-    api_token = db.child("auth").child('access_token').get()
 
-    return api_token.val()
+    return re
 
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():

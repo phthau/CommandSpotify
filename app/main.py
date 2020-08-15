@@ -27,6 +27,8 @@ config = {
 }
 
 firebase = pyrebase.initialize_app(config)
+auth = firebase.auth()
+user = auth.sign_in_with_email_and_password(os.environ.get('REST_EMAIL'), os.environ.get('REST_PASSWORD'))
 
 ##TODO: refreshtoken
 @app.route("/")
@@ -44,7 +46,7 @@ def home():
     
     re = json.loads(post_request.content)
     db = firebase.database()
-    results = db.child("auth").update(re)
+    results = db.child("auth").update(re, user['idToken'])
 
     return re
 
@@ -55,7 +57,7 @@ def sms_reply():
     logging.info("Received the following message: {} - {}".format(number, message_body))
 
     db = firebase.database()
-    api_token = db.child("auth").child('access_token').get()
+    api_token = db.child("auth").child('access_token').get(user['idToken'])
     sp = SpotifyWrapper(api_token.val())
     try:
         if message_body.lower() == "next":
